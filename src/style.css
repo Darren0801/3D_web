@@ -1,0 +1,53 @@
+:root {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+  background-color: #0b1021;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, #111830, #0b1021 45%),
+    radial-gradient(circle at 80% 10%, #162446, transparent 35%),
+    #0b1021;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-bar {
+  padding: 12px 18px;
+  color: #e2e8f0;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  background: linear-gradient(90deg, #0f172a, #111b36 45%, #16233f);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+.map-shell {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.map-container {
+  position: absolute;
+  inset: 0;
+}
