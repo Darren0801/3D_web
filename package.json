@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "cesium": "^1.137.0",
+    "mars3d": "^3.10.11",
+    "mars3d-cesium": "^1.136.0",
     "vue": "^3.5.24"
   },
   "devDependencies": {
