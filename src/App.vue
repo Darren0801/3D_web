@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import CesiumMap from './components/HelloWorld.vue'
 import MarsMap from './components/MarsMap.vue'
-import Mustang from './views/MuStang/MuStang.vue'
 import AirPlane from './views/AirPlane/Airplane.vue'
 
 const mode = ref('plane')
@@ -18,7 +17,7 @@ const mode = ref('plane')
           :class="{ active: mode === 'plane' }"
           @click="mode = 'plane'"
         >
-          3D 飞机
+          AirPlane
         </button>
         <button
           class="toggle-btn"
@@ -40,7 +39,6 @@ const mode = ref('plane')
       <AirPlane v-if="mode === 'plane'" />
       <CesiumMap v-else-if="mode === 'cesium'" />
       <MarsMap v-else-if="mode === 'mars'" />
-      <Mustang v-else />
     </main>
   </div>
 </template>
