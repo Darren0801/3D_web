@@ -2,8 +2,10 @@
 import { ref } from 'vue'
 import CesiumMap from './components/HelloWorld.vue'
 import MarsMap from './components/MarsMap.vue'
+import Mustang from './views/MuStang/MuStang.vue'
+import AirPlane from './views/AirPlane/Airplane.vue'
 
-const mode = ref('cesium')
+const mode = ref('plane')
 </script>
 
 <template>
@@ -11,6 +13,13 @@ const mode = ref('cesium')
     <header class="app-bar">
       <div class="brand">地图模式切换</div>
       <div class="map-toggle">
+        <button
+          class="toggle-btn"
+          :class="{ active: mode === 'plane' }"
+          @click="mode = 'plane'"
+        >
+          3D 飞机
+        </button>
         <button
           class="toggle-btn"
           :class="{ active: mode === 'cesium' }"
@@ -28,8 +37,10 @@ const mode = ref('cesium')
       </div>
     </header>
     <main class="map-shell">
-      <CesiumMap v-if="mode === 'cesium'" />
-      <MarsMap v-else />
+      <AirPlane v-if="mode === 'plane'" />
+      <CesiumMap v-else-if="mode === 'cesium'" />
+      <MarsMap v-else-if="mode === 'mars'" />
+      <Mustang v-else />
     </main>
   </div>
 </template>
