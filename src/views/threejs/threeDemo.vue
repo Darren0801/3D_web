@@ -23,7 +23,7 @@ onMounted(() => {
   // 2 创建相机（关键修复：相机不需要添加到场景）
   // 30:视场角度, width / height:Canvas画布宽高比, 1:近裁截面, 3000：远裁截面
   camera = new THREE.PerspectiveCamera(30, width / height, 1, 3000)
-  camera.position.set(200, 200, 200)
+  camera.position.set(400, 400, 400)
   camera.lookAt(0, 0, 0)
 
   // 3 创建渲染器
@@ -45,7 +45,7 @@ onMounted(() => {
   scene.add(axesHelper)
 
   // 6 创建立方体（你的原有代码，调整位置让阴影可见）
-  const geometry = new THREE.BoxGeometry(50, 50, 50)
+  const geometry = new THREE.BoxGeometry(40, 40, 40)
   const material = new THREE.MeshLambertMaterial({ color: 0xffffff })
   const mesh = new THREE.Mesh(geometry, material)
   // 调整位置：立方体底部刚好在地面（y=0）上（立方体中心y=25，边长50）
@@ -69,6 +69,7 @@ onMounted(() => {
   // 9 平行光（你的原有配置，补充到场景）
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
   directionalLight.position.set(200, 400, 300)
+  directionalLight.intensity = 3.0;//光照强度
   // 平行光投射阴影（保留你的配置）
   directionalLight.castShadow = true
   directionalLight.shadow.mapSize.set(4096,4096) 
@@ -78,6 +79,7 @@ onMounted(() => {
   directionalLight.shadow.camera.bottom = -500
   directionalLight.shadow.camera.near = 0.5
   directionalLight.shadow.camera.far = 1000
+   
   // 可选：显示平行光阴影相机范围（调试用，可删除）
   // const shadowHelper = new THREE.CameraHelper(directionalLight.shadow.camera)
   // scene.add(shadowHelper)
