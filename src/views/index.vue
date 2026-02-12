@@ -6,17 +6,21 @@ import CesiumMap from '../components/HelloWorld.vue'
 import MarsMap from '../components/MarsMap.vue'
 import AirPlane from './AirPlane/Airplane.vue'
 import ThreeDemo from './threejs/threeDemo.vue'
+// import Ferrari from './ferrari/ferrari.vue'
+import AirMap from './airMap/airMap.vue'
 
 // 维护一份配置即可扩展按钮与组件
 const modes = [
+//   { key: 'airMap', label: 'airMap', component: AirMap },
+//   { key: 'ferrari', label: 'ferrari', component: Ferrari },
   { key: 'three', label: 'threeDemo', component: ThreeDemo },
-  { key: 'plane', label: 'AirPlane', component: AirPlane },
+  { key: 'AirPlane', label: 'AirPlane', component: AirPlane },
   { key: 'cesium', label: '原生 Cesium', component: CesiumMap },
   { key: 'mars', label: 'Mars3D 场景', component: MarsMap }
 ]
 
-const activeKey = ref(modes[1].key) // 默认 AirPlane
-const ActiveComponent = shallowRef(modes[1].component)
+const activeKey = ref(modes[0].key)
+const ActiveComponent = shallowRef(modes[0].component)
 
 const switchMode = (mode) => {
   activeKey.value = mode.key
