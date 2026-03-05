@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import * as Cesium from 'cesium'
+import 'cesium/Build/Cesium/Widgets/widgets.css'
 
 const viewerEl = ref(null)
 const viewer = ref(null)
@@ -16,6 +17,10 @@ onMounted(() => {
   if (!viewerEl.value) return
 
   viewer.value = new Cesium.Viewer(viewerEl.value, {
+    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+      url: 'https://tile.openstreetmap.org/',
+    }),
+    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
     animation: false,
     timeline: false,
     geocoder: false,

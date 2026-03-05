@@ -18,17 +18,23 @@ let trailGeometry = null
 let trailLine = null
 
 // --- 配置参数 ---
-const cruiseSpeedPerFrame = 0.5
-const landingSpeedPerFrame = 0.2
+const cruiseSpeed = 40
+const landingSpeed = 20
+const maxDelta = 0.05
 // 侧面视角相机偏移
 const cameraOffset = new THREE.Vector3(0, 15, 80)
 const trailColor = 0x00ffff
+const cameraDamping = 10
+const lookAtDamping = 12
 
 // 鼠标交互
 let isDragging = false
 let dragStart = { x: 0, y: 0 }
 let orbitYaw = 0
 let orbitPitch = 0
+
+let smoothedCameraPos = new THREE.Vector3()
+let smoothedLookAt = new THREE.Vector3()
 
 const isReady = ref(false)
 
@@ -126,59 +132,121 @@ function startFlyA2B() {
   const landingEnd = new THREE.Vector3(260, 0, 0)  // 降落终点
 
   let phase = 'takeoff'
-  const takeoffDuration = 3.5 
+  const takeoffDuration = 3.5
+
+  const takeoffCurve = new THREE.CatmullRomCurve3(
+    [
+      startPos.clone(),
+      new THREE.Vector3(30, 5, -10),
+      new THREE.Vector3(55, 22, 10),
+      takeoffEnd.clone(),
+    ],
+    false,
+    'centripetal'
+  )
+  const landingCurve = new THREE.CatmullRomCurve3(
+    [
+      cruiseEnd.clone(),
+      new THREE.Vector3(210, 45, 0),
+      new THREE.Vector3(235, 18, 5),
+      landingEnd.clone(),
+    ],
+    false,
+    'centripetal'
+  )
+
+  const setOrientationByMotion = (from, to) => {
+    if (!model) return
+    const dir = to.clone().sub(from)
+    if (dir.lengthSq() < 1e-8) return
+    const forward = dir.normalize()
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), forward)
+    model.quaternion.slerp(q, 0.25)
+  }
+
+  let cruiseTarget = cruiseEnd.clone()
+
+  let trailTimeAcc = 0
+  const trailRecordInterval = 1 / 30
 
   const animateFrame = () => {
     animationId = requestAnimationFrame(animateFrame)
+    const dt = Math.min(clock.getDelta(), maxDelta)
     const elapsed = clock.getElapsedTime()
 
     if (phase === 'takeoff') {
       const t = Math.min(elapsed / takeoffDuration, 1)
-      model.position.lerpVectors(startPos, takeoffEnd, t)
-      model.rotation.set(0, Math.PI / 2, 0)
-      model.rotation.x = -Math.sin(t * Math.PI) * 0.3 
+      const p = takeoffCurve.getPoint(t)
+      model.position.copy(p)
+      const pAhead = takeoffCurve.getPoint(Math.min(t + 0.002, 1))
+      setOrientationByMotion(p, pAhead)
+      model.rotation.x += (-Math.sin(t * Math.PI) * 0.25 - model.rotation.x) * 0.12
       
       if (t >= 1) { phase = 'cruise'; clock.start() }
     } 
     else if (phase === 'cruise') {
-      const dir = new THREE.Vector3().subVectors(cruiseEnd, model.position)
-      if (dir.length() < cruiseSpeedPerFrame) {
-        model.position.copy(cruiseEnd)
+      const dir = new THREE.Vector3().subVectors(cruiseTarget, model.position)
+      const dist = dir.length()
+      const step = cruiseSpeed * dt
+      if (dist <= step) {
+        const prev = model.position.clone()
+        model.position.copy(cruiseTarget)
+        setOrientationByMotion(prev, model.position)
         phase = 'landing'
         clock.start()
       } else {
-        model.position.add(dir.normalize().multiplyScalar(cruiseSpeedPerFrame))
-        model.rotation.set(0, Math.PI / 2, 0)
+        const prev = model.position.clone()
+        model.position.add(dir.normalize().multiplyScalar(step))
+        setOrientationByMotion(prev, model.position)
       }
     } 
     else if (phase === 'landing') {
-      const dir = new THREE.Vector3().subVectors(landingEnd, model.position)
-      const dist = dir.length()
-      if (dist < landingSpeedPerFrame) {
+      const landingDuration = Math.max(landingCurve.getLength() / landingSpeed, 0.01)
+      const t = Math.min(elapsed / landingDuration, 1)
+      const p = landingCurve.getPoint(t)
+      const prev = model.position.clone()
+      model.position.copy(p)
+      const pAhead = landingCurve.getPoint(Math.min(t + 0.003, 1))
+      setOrientationByMotion(prev, pAhead)
+      model.rotation.x += (0.08 - model.rotation.x) * 0.08
+
+      if (t >= 1) {
         model.position.copy(landingEnd)
-        model.rotation.set(0, Math.PI / 2, 0)
         phase = 'done'
-      } else {
-        model.position.add(dir.normalize().multiplyScalar(landingSpeedPerFrame))
-        model.rotation.set(0, Math.PI / 2, 0.15) 
       }
     }
 
-    recordPos()
-    updateCamera(model.position)
+    trailTimeAcc += dt
+    if (trailTimeAcc >= trailRecordInterval) {
+      trailTimeAcc = 0
+      recordPos()
+    }
+    updateCamera(model.position, dt)
     renderer.render(scene, camera)
   }
 
   animateFrame()
 }
 
-function updateCamera(target) {
+function updateCamera(target, dt = 0.016) {
   if (!camera) return
   const relativeOffset = cameraOffset.clone()
   const euler = new THREE.Euler(orbitPitch, orbitYaw, 0, 'YXZ')
   relativeOffset.applyQuaternion(new THREE.Quaternion().setFromEuler(euler))
-  camera.position.copy(target.clone().add(relativeOffset))
-  camera.lookAt(target)
+
+  const desiredPos = target.clone().add(relativeOffset)
+  if (smoothedCameraPos.lengthSq() === 0) {
+    smoothedCameraPos.copy(desiredPos)
+    smoothedLookAt.copy(target)
+  }
+
+  const camAlpha = 1 - Math.exp(-cameraDamping * dt)
+  const lookAlpha = 1 - Math.exp(-lookAtDamping * dt)
+  smoothedCameraPos.lerp(desiredPos, camAlpha)
+  smoothedLookAt.lerp(target, lookAlpha)
+
+  camera.position.copy(smoothedCameraPos)
+  camera.lookAt(smoothedLookAt)
 }
 
 function bindDrag(container) {
